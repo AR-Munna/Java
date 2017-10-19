@@ -1,0 +1,161 @@
+package Encoder;
+
+import java.io.BufferedReader;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.Socket;
+import java.util.Random;
+import java.util.Scanner;
+
+
+public class Client {
+
+    public static void main(String[] args) throws IOException {
+        Socket socket = new Socket("172.16.13.200",2213);
+        DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+        DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+        
+        FileReader fileReader = new FileReader("input.txt");
+        BufferedReader bufferedReader = new BufferedReader(fileReader);
+        Random rand = new Random();
+        
+                   
+            int val;
+            while((val = bufferedReader.read())!= -1){
+                char c = (char) val;
+                System.out.println("Correct character : " + c);
+                String data = Integer.toBinaryString(val);
+                while(data.length()!=8){
+                    data = "0"+data;
+                }
+                System.out.println("Bit pattern :       " + data);
+                String hamming = make12Bit(data);
+                
+                hamming = Parity1(hamming);
+                hamming = Parity2(hamming);
+                hamming = Parity4(hamming);
+                hamming = Parity8(hamming);
+                
+                System.out.println("Encoded 12 bit :    "+hamming);
+                    StringBuilder sb=new StringBuilder(hamming);
+                 
+                    int error = rand.nextInt(100);
+                    int pos = rand.nextInt(12);
+                    if(error>50){
+                        
+                        if(sb.charAt(pos) == '0'){
+                            sb.setCharAt(pos, '1');
+                        }
+                        else{
+                            sb.setCharAt(pos, '0');
+                        }
+                        System.out.println("Error at position:  " + (int) (pos+1));
+                        
+                    }
+                    System.out.println("\n");
+               // System.out.println(sb.toString());
+                dataOutputStream.writeUTF(sb.toString());
+                dataInputStream.readUTF();
+                
+            }
+            
+                dataOutputStream.writeUTF("-1");
+            
+        
+        
+    }
+    
+    public static String make12Bit(String in){
+        String out = "00"+in.substring(0, 1)+"0"+in.substring(1, 4)+"0"+in.substring(4);
+        
+        return out;
+    } 
+    
+    static String Parity1(String in){
+        
+        int [] ar = {3,5,7,9,11};
+        int temp = 0;
+        for (int i = 0; i < ar.length; i++) {
+            int x=in.charAt(ar[i]-1);
+            if( x== '1' ){
+                temp++;
+            }
+        }
+        
+        if(temp%2==0){
+            in = "0" + in.substring(1);
+        } else{
+            in = "1" + in.substring(1);
+        }
+        
+        return in;        
+    }
+    
+    
+    
+    static String Parity2(String in){
+        
+        int [] ar = {3,6,7,10,11};
+        int temp = 0;
+        StringBuilder output = new StringBuilder(in);
+        for (int i = 0; i < ar.length; i++) {
+            int x=in.charAt(ar[i]-1);
+            if( x== '1' ){
+                temp++;
+            }
+        }
+        
+        if(temp%2==0){
+            output.setCharAt(1, '0');
+        } else{
+            output.setCharAt(1, '1');
+        }
+        
+        return output.toString();
+    }
+    
+    static String Parity4(String in){
+        
+        int [] ar = {5,6,7,12};
+        int temp = 0;
+        StringBuilder output = new StringBuilder(in);
+        for (int i = 0; i < ar.length; i++) {
+            int x=in.charAt(ar[i]-1);
+            if( x== '1' ){
+                temp++;
+            }
+        }
+        
+        if(temp%2==0){
+            output.setCharAt(3, '0');
+        } else{
+            output.setCharAt(3, '1');
+        }
+        
+        return output.toString();       
+    }
+    
+    static String Parity8(String in){
+        
+        int [] ar = {9,10,11,12};
+        int temp = 0;
+        StringBuilder output = new StringBuilder(in);
+        for (int i = 0; i < ar.length; i++) {
+            int x=in.charAt(ar[i]-1);
+            if( x== '0' ){
+                temp++;
+            }
+        }
+        
+        if(temp%2==0){
+            output.setCharAt(7, '0');
+        } else{
+            output.setCharAt(7, '1');
+        }
+        
+        return output.toString();        
+    }
+}
